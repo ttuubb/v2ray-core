@@ -1,0 +1,65 @@
+name: Build Libraries
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          # Windows builds
+          - os: windows-latest
+            goos: windows
+            goarch: amd64
+            suffix: .dll
+          - os: windows-latest
+            goos: windows
+            goarch: 386
+            suffix: .dll
+
+          # Linux builds
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+            suffix: .so
+          - os: ubuntu-latest
+            goos: linux
+            goarch: 386
+            suffix: .so
+
+          # macOS builds
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+            suffix: .dylib
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+            suffix: .dylib
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.20'
+
+    - name: Build Library
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+      run: |
+        go build -v -o v2ray${{ matrix.suffix }} -buildmode=c-shared ./main
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: v2ray-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: v2ray*
