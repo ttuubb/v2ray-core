@@ -237,7 +237,14 @@ jobs:
           mv ./.temp/* .
           ls -lah --recursive
           {
-            go run github.com/v2fly/V2BuildAssist/v2buildutil gen version $(git describe --tags $(git rev-list --tags --max-count=1))
+            git fetch --tags --force
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "unknown")
+            if [ "$VERSION" = "unknown" ]; then
+              echo "Error: Failed to get version tag"
+              exit 1
+            fi
+            echo "Building release for version: $VERSION"
+            go run github.com/v2fly/V2BuildAssist/v2buildutil gen version "$VERSION"
             go run github.com/v2fly/V2BuildAssist/v2buildutil gen project "v2fly"
             for zip in $(ls *.zip); do
               go run github.com/v2fly/V2BuildAssist/v2buildutil gen file ${zip}
